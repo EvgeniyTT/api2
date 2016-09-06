@@ -6,16 +6,12 @@ const wait = require('asyncawait/await');
 const router = express.Router();
 
 
-router.get('/:gitUserName/:gitRepository', async((req, res, next) => {
+router.get('/:gitUserName/:gitRepository', async.cps((req, res) => {
   const gitUserName = req.params.gitUserName;
   const gitRepository = req.params.gitRepository;
-  try {
-    const githubFetch = wait(fetch(`https://api.github.com/repos/${gitUserName}/${gitRepository}`));
-    const githubFetchInfo = wait(githubFetch.json());
-    res.json(githubFetchInfo);
-  } catch (error) {
-    res.send(error);
-  }
+  const githubFetch = wait(fetch(`https://api.github.com/repos/${gitUserName}/${gitRepository}`));
+  const githubFetchInfo = wait(githubFetch.json());
+  res.json(githubFetchInfo);
 }));
 
 module.exports = router;

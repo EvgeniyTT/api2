@@ -1,6 +1,8 @@
+require('../public/javascripts/models/image.js');
 const express = require('express');
 const db = require('../public/javascripts/mongo.js');
-require('../public/javascripts/models/image.js');
+const async = require('asyncawait/async');
+const wait = require('asyncawait/await');
 
 const router = express.Router();
 const Image = db.model('Image');
