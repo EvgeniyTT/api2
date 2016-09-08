@@ -1,4 +1,5 @@
 const express = require('express');
+const app = express();
 const path = require('path');
 // const favicon = require('serve-favicon');
 const logger = require('morgan');
@@ -8,7 +9,7 @@ const cors = require('cors');
 const images = require('./routes/image');
 const git = require('./routes/git');
 
-const app = express();
+
 
 // uncomment after placing your favicon in /public
 //app.use(favicon(path.join(__dirname, 'public', 'favicon.ico')));

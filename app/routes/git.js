@@ -5,7 +5,6 @@ const wait = require('asyncawait/await');
 
 const router = express.Router();
 
-
 router.get('/:gitUserName/:gitRepository', async.cps((req, res) => {
   const gitUserName = req.params.gitUserName;
   const gitRepository = req.params.gitRepository;

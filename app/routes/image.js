@@ -3,70 +3,56 @@ const express = require('express');
 const db = require('../public/javascripts/mongo.js');
 const async = require('asyncawait/async');
 const wait = require('asyncawait/await');
+const newError = require('./errorFactory');
+const co = require('co');
 
 const router = express.Router();
 const Image = db.model('Image');
 
 function checkImageFields(req, res, next) {
-  if (req.method in ['POST', 'PUT'] && (req.body.src === '' || req.body.description === '')) {
-    const err = new Error('Required fields are not populated');
-    err.status = 400;
-    return next(err);
+  if (req.body.src === '' || req.body.description === '') {
+    return next(newError(400, 'Required fields are not populated'));
   }
   next();
 }
 
-router.param('imageId', (req, res, next, imageId) => {
-  Image.findOne({ _id: imageId }, (err, image) => {
-    if (err) { return next(err);
-    } else if (!image) {
-      err = new Error('Image was not found');
-      err.status = 404;
-      return next(err);
-    }
-    req.image = image;
-    next();
-  });
-});
+router.param('imageId', co.wrap(function*(req, res, next, imageId) {
+  const result = yield Image.findOne({ _id: imageId });
+  if (!result) {
+    return next(newError(404, 'Image was not found'));
+  }
+  req.image = result;
+  next();
+}));
 
-  // routing
-router.get('/', (req, res, next) => {
-  Image.find((err, images) => {
-    if (err) { return next(err);
-    } else if (!images) {
-      err = new Error('No images were found');
-      err.status = 404;
-      return next(err);
-    }
-    res.json(images);
-  });
-});
+// routing
+router.get('/', co.wrap(function*(req, res, next) {
+  const images = yield Image.find();
+  if (images.length === 0) {
+    return next(newError(404, 'No images were found'));
+  }
+  res.json(images);
+}));
 
 router.get('/:imageId', (req, res) => {
   res.json(req.image);
 });
 
-router.post('/', checkImageFields, (req, res, next) => {
+router.post('/', checkImageFields, co.wrap(function*(req, res, next) {
   const image = new Image(req.body);
-  image.save((err) => {
-    if (err) { return next(err); }
-    res.json(image);
-  });
-});
+  const result = yield image.save();
+  res.json(result);
+}));
 
-router.put('/:imageId', checkImageFields, (req, res, next) => {
+router.put('/:imageId', checkImageFields, co.wrap(function*(req, res, next) {
   const image = req.body;
-  Image.findOneAndUpdate({ _id: req.params.imageId }, image, (err, image) => {
-    if (err) { return next(err); }
-    res.json(image);
-  });
-});
+  const result = yield Image.findOneAndUpdate({ _id: req.params.imageId }, image);
+  res.json(result);
+}));
 
-router.delete('/:imageId', (req, res, next) => {
-  Image.remove({ _id: req.params.imageId }, (err, image) => {
-    if (err) { return next(err); }
-    res.json(image);
-  });
-});
+router.delete('/:imageId', co.wrap(function*(req, res) {
+  const result = yield Image.remove({ _id: req.params.imageId });
+  res.json(result);
+}));
 
 module.exports = router;
