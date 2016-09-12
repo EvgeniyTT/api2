@@ -4,8 +4,8 @@ const mongoose = require('mongoose');
 mongoose.connect(process.env.MONGODB_URL);
 
 // When successfully connected
-mongoose.connection.on('connected', (dbURI) => {
-  console.log(`Mongoose default connection open to ${dbURI}`);
+mongoose.connection.on('connected', () => {
+  console.log(`Mongoose default connection open`);
 });
 
 // If the connection throws an error

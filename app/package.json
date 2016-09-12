@@ -5,6 +5,9 @@
   "scripts": {
     "start": "node ./bin/www"
   },
+  "babel": {
+    "plugins": ["transform-object-rest-spread"]
+  },
   "dependencies": {
     "asyncawait": "^1.0.6",
     "body-parser": "~1.15.1",
@@ -23,6 +26,7 @@
     "serve-favicon": "~2.3.0"
   },
   "devDependencies": {
+    "babel-plugin-transform-object-rest-spread": "^6.8.0",
     "eslint": "^3.2.2",
     "eslint-config-airbnb": "^10.0.0",
     "eslint-config-airbnb-base": "^5.0.1",

@@ -6,10 +6,9 @@ const logger = require('morgan');
 const cookieParser = require('cookie-parser');
 const bodyParser = require('body-parser');
 const cors = require('cors');
-const images = require('./routes/image');
+const images = require('./routes/images');
 const git = require('./routes/git');
-
-
+const router = require('./lib/router');
 
 // uncomment after placing your favicon in /public
 //app.use(favicon(path.join(__dirname, 'public', 'favicon.ico')));
@@ -20,8 +19,10 @@ app.use(bodyParser.urlencoded({ extended: false }));
 app.use(cookieParser());
 app.use(express.static(path.join(__dirname, 'public')));
 
-app.use('/images', images);
-app.use('/git', git);
+// app.use('/images', images);
+// app.use('/git', git);
+
+app.use('/', router);
 
 // catch 404 and forward to error handler
 app.use(function(req, res, next) {
@@ -36,6 +37,10 @@ app.use(function(req, res, next) {
 // will print stacktrace
 if (app.get('env') === 'development') {
   app.use(function(err, req, res, next) {
+    if (['TypeError', 'SyntaxError'].indexOf(err.name) > -1) {
+      console.log(err);
+      process.exit();
+    }
     res.status(err.status || 500);
     res.json({
       message: err.message,

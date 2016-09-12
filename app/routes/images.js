@@ -1,9 +1,7 @@
-require('../public/javascripts/models/image.js');
+require('../src/models/image.js');
 const express = require('express');
-const db = require('../public/javascripts/mongo.js');
-const async = require('asyncawait/async');
-const wait = require('asyncawait/await');
-const newError = require('./errorFactory');
+const db = require('../lib/mongo.js');
+const newError = require('../lib/errorFactory');
 const co = require('co');
 
 const router = express.Router();
