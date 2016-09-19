@@ -1,5 +1,6 @@
 {
   "GET /images" : "images.list",
+  "GET /images/:skip/:limit" : "images.list",
   "GET /images/:imageId" : "images.getOne",
   "POST /images" : "images.create",
   "PUT /images/:imageId" : "images.update",
