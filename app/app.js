@@ -5,6 +5,7 @@ const path = require('path');
 const logger = require('morgan');
 const cookieParser = require('cookie-parser');
 const bodyParser = require('body-parser');
+const busboy = require('connect-busboy');
 const cors = require('cors');
 const images = require('./routes/images');
 const git = require('./routes/git');
@@ -14,8 +15,9 @@ const router = require('./lib/router');
 //app.use(favicon(path.join(__dirname, 'public', 'favicon.ico')));
 app.use(cors());
 app.use(logger('dev'));
-app.use(bodyParser.json());
-app.use(bodyParser.urlencoded({ extended: false }));
+app.use(busboy());
+// app.use(bodyParser.json());
+// app.use(bodyParser.urlencoded({ extended: false }));
 app.use(cookieParser());
 console.log(__dirname);
 app.use(express.static(path.join(__dirname, 'assets/images')));
@@ -39,8 +41,8 @@ app.use(function(req, res, next) {
 // will print stacktrace
 if (app.get('env') === 'development') {
   app.use(function(err, req, res, next) {
+    console.log(err.stack);
     if (['TypeError', 'SyntaxError'].indexOf(err.name) > -1) {
-      console.log(err);
       process.exit();
     }
     res.status(err.status || 500);
