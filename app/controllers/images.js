@@ -35,164 +35,41 @@ module.exports = {
     return images;
   },
   * create(req) {
-
-/////  THIS WORKS!!!!!!!!!
-    var stream = request('http://i.imgur.com/dmetFjf.jpg');
-    var writeStream = fs.createWriteStream('test.jpg')
-
-    stream.on('data', function(data) {
-      writeStream.write(data)
-    });
-
-    stream.on('end', function() {
+    let filename;
+    //write file by link
+    console.log(req.body);
+    if (req.body.src) {
+      const stream = request(req.body.src);
+      filename = req.body.src.split('/').slice(-1)[0];
+      const writeStream = fs.createWriteStream(`../app/assets/images/${filename}`);
+      stream.on('data', (data) => {
+        writeStream.write(data)
+      });
+      stream.on('end', () => {
+        writeStream.end();
+      });
+      stream.on('error', (err) => {
+        console.log('something is wrong :( ');
+        writeStream.close();
+      });
+    }
+    // write file from dropzone
+    if (req.files) {
+      filename = req.files.file.name;
+      const writeStream = fs.createWriteStream(`../app/assets/images/${filename}`);
+      writeStream.write(req.files.file.data)
       writeStream.end();
-    });
-
-    stream.on('error', function(err) {
-      console.log('something is wrong :( ');
-      writeStream.close();
-    });
-/////  THIS WORKS!!!!!!!!!
-
-
-/////  THIS WORKS!!!!!!!!!
-    var stream2 = req;
-    var writeStream2 = fs.createWriteStream('test3.jpg')
-
-    stream2.on('data', function(data) {
-      writeStream2.write(data)
-    });
-
-    stream2.on('end', function() {
-      writeStream2.end();
-    });
-
-    stream2.on('error', function(err) {
-      console.log('something is wrong :( ');
-      writeStream2.close();
-    });
-/////  THIS WORKS!!!!!!!!!
-
-        // function decodeBase64Image(dataString) {
-        //   console.log(dataString);
-        //   var matches = dataString.match(/^data:([A-Za-z-+\/]+);base64,(.+)$/),
-        //     response = {};
-        //
-        //   if (matches.length !== 3) {
-        //     return new Error('Invalid input string');
-        //   }
-        //
-        //   response.type = matches[1];
-        //   response.data = new Buffer(matches[2], 'base64');
-        //
-        //   return response;
-        // }
-
-        // var imageBuffer = decodeBase64Image(data);
-        // console.log(imageBuffer);
-
-    // let body = [];
-    // req.on('data', (chunk) => {
-    //   body.push(chunk);
-    // }).on('end', () => {
-    //   body = Buffer.concat(body).toString();
-    //   console.log('BODY');
-    //   let imageBuffer = decodeBase64Image(body);
-    //   fs.writeFile('test.jpg', imageBuffer.data, (err) => { console.log(err) });
-    //   // at this point, `body` has the entire request body stored in it as a string
-    //
-    //   const tempFile = fs.createWriteStream('../filee6.jpg');
-    //   console.log('HERE');
-    //   tempFile.on('open', (fd) => {
-    //     console.log('OPEN');
-    //     tempFile.write(body);
-    //     tempFile.end();
-    //     })
-    // });
-
-
-
-    // req.on('data', function(chunk) {
-    //   console.log('/////////');
-    //   console.log(chunk);
-    //   console.log('/////////');
-    //     // req.rawBody += chunk;
-    // });
-
-    // function download(url, tempFilepath, filepath, callback) {
-    //
-    //     var tempFile = fs.createWriteStream(tempFilepath);
-    //     tempFile.on('open', function(fd) {
-    //         http.request(url, function(res) {
-    //             res.on('data', function(chunk) {
-    //                 tempFile.write(chunk);
-    //             }).on('end', function() {
-    //                 tempFile.end();
-    //                 fs.renameSync(tempFile.path, filepath);
-    //                 return callback(filepath);
-    //             });
-    //         });
-    //     });
-    // }
-    // const writeStream = fs.createWriteStream('../filee4.jpg');
-    //
-    // req.pipe(writeStream, {end: false});
-    // req.on('end',  ()  {
-    //   res.end('chunk received');
-    // });
-
-    // tempFile.on('open', (fd) => {
-    //   req.on('data', (chunk) => {
-    //       console.log('CHUNK');
-    //       tempFile.write(chunk);
-    //   })
-    //   .on('end', () => {
-    //       console.log('END');
-    //       tempFile.end();
-    //       // fs.renameSync(tempFile.path, '../filee4');
-    //     })
-    //   })
-
-    // req.on('data', function(chunk) {
-    //   console.log('/////////');
-    //   console.log(chunk);
-    //   console.log('/////////');
-    //     // req.rawBody += chunk;
-    // });
-
-    // if(req.busboy) {
-    //   req.busboy.on('file', function(fieldname, file, filename, encoding, mimetype) {
-    //    console.log('-----------------**********-------------');
-    //    console.log(filename);
-    //    console.log(mimetype);
-    //
-    //        fs.writeFile('filename.jpeg', file, function (err) {
-    //          if (err) {
-    //            console.log('ERROR');
-    //            console.log(err);
-    //            throw newError(400, 'Bad Data');
-    //          }
-    //        })
-    //        console.log('-----------------**********-------------');
-    //       })
-    //
-    //   .on('field', function(key, value, keyTruncated, valueTruncated) {
-    //   })
-    //   .on('end', function() {
-    //     console.log('END');
-    //   })
-    //   .on('finish', function(){
-    //     console.log('FINISH');
-    //   })
-    //
-    //   req.pipe(req.busboy);
-    // }
-
-    // console.log('///////////////');
-    // // const image = new Image(req.body);
-    // // const result = yield image.save();
-    // // return result;
-    // return "Ok";
+    }
+    // write data to DB
+    const currentDate = new Date();
+    const image = {
+      src: filename,
+      description: req.body.description || '',
+      dateAdded: [currentDate.getMonth() + 1, currentDate.getDate(), currentDate.getFullYear()].join('/')
+    };
+    const imageDB = new Image(image);
+    const result = yield imageDB.save();
+    return result;
   },
   * update(req) {
     const image = req;
