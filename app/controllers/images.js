@@ -35,41 +35,78 @@ module.exports = {
     return images;
   },
   * create(req) {
-    let filename;
-    //write file by link
-    console.log(req.body);
-    if (req.body.src) {
-      const stream = request(req.body.src);
-      filename = req.body.src.split('/').slice(-1)[0];
-      const writeStream = fs.createWriteStream(`../app/assets/images/${filename}`);
-      stream.on('data', (data) => {
-        writeStream.write(data)
-      });
-      stream.on('end', () => {
-        writeStream.end();
-      });
-      stream.on('error', (err) => {
-        console.log('something is wrong :( ');
-        writeStream.close();
-      });
+    const image = req.body;
+    function decodeBase64Image(dataString) {
+      const matches = dataString.match(/^data:([A-Za-z-+\/]+);base64,(.+)$/);
+      const response = {};
+      if (matches.length !== 3) {
+        return new Error('Invalid input string');
+      }
+      response.type = matches[1];
+      console.log('***********');
+      const imageExtension = response.type.split('/')[1];
+      image.name = [image.name, imageExtension].join('.');
+      console.log(image.name);
+      console.log('***********');
+
+      response.data = new Buffer(matches[2], 'base64');
+      return response;
     }
-    // write file from dropzone
-    if (req.files) {
-      filename = req.files.file.name;
-      const writeStream = fs.createWriteStream(`../app/assets/images/${filename}`);
-      writeStream.write(req.files.file.data)
-      writeStream.end();
-    }
-    // write data to DB
+    const imageBuffer = decodeBase64Image(image.data);
+    fs.writeFile(`../app/assets/images/${image.name}`, imageBuffer.data, (err) => {
+      if(err) {
+        console.log(err);
+      }
+      console.log("The file was saved!");
+    });
+
     const currentDate = new Date();
-    const image = {
-      src: filename,
-      description: req.body.description || '',
+    const imageModel = {
+      src: image.name,
+      description: image.description,
       dateAdded: [currentDate.getMonth() + 1, currentDate.getDate(), currentDate.getFullYear()].join('/')
     };
-    const imageDB = new Image(image);
+    const imageDB = new Image(imageModel);
     const result = yield imageDB.save();
     return result;
+
+    // let filename;
+    // //write file by link
+    // console.log(req.body);
+    // if (req.body.src) {
+    //   const stream = request(req.body.src);
+    //   filename = req.body.src.split('/').slice(-1)[0];
+    //   const writeStream = fs.createWriteStream(`../app/assets/images/${filename}`);
+    //   stream.on('data', (data) => {
+    //     writeStream.write(data)
+    //   });
+    //   stream.on('end', () => {
+    //     writeStream.end();
+    //   });
+    //   stream.on('error', (err) => {
+    //     console.log('something is wrong :( ');
+    //     writeStream.close();
+    //   });
+    // }
+    // // write file from dropzone
+    // if (req.files) {
+    //   console.log(req.files);
+    //
+    //   filename = req.files.file.name;
+    //   const writeStream = fs.createWriteStream(`../app/assets/images/${filename}`);
+    //   writeStream.write(req.files.file.data)
+    //   writeStream.end();
+    // }
+    // // write data to DB
+    // const currentDate = new Date();
+    // const image = {
+    //   src: filename,
+    //   description: req.body.description || '',
+    //   dateAdded: [currentDate.getMonth() + 1, currentDate.getDate(), currentDate.getFullYear()].join('/')
+    // };
+    // const imageDB = new Image(image);
+    // const result = yield imageDB.save();
+    // return result;
   },
   * update(req) {
     const image = req;
