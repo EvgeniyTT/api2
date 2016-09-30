@@ -1,9 +1,12 @@
 const newError = require('../lib/errorFactory');
 const db = require('../lib/mongo.js');
 const fs = require('fs');
-const request = require('request');
+const mkdirp = require('mkdirp');
 
 const Image = db.model('Image');
+
+const originDir = process.env.ORIGIN_DIR;
+const thumbnailsDir = process.env.THUMBNAILS_DIR;
 
 module.exports = {
   * getOne(req) {
@@ -36,6 +39,30 @@ module.exports = {
   },
   * create(req) {
     const image = req.body;
+    const imageDB = new Image(image);
+    const result = yield imageDB.save();
+
+    const imageID = result._id.toString();
+    const fileDir = `${imageID.slice(0,8)}/${imageID.slice(8,16)}`;
+    mkdirp.sync(`${originDir}/${fileDir}`);
+    mkdirp.sync(`${thumbnailsDir}/${fileDir}`);
+
+    const imageBuffer = decodeBase64Image(image.data);
+    fs.writeFile(`${originDir}/${fileDir}/${imageID.slice(16,24)}.jpg`, imageBuffer.data, (err) => {
+      if(err) {
+        console.log(err);
+      }
+      console.log("Origin image was saved!");
+    });
+
+    const thumbnailBuffer = decodeBase64Image(image.thumbnailData);
+    fs.writeFile(`${thumbnailsDir}/${fileDir}/${imageID.slice(16,24)}.jpg`, thumbnailBuffer.data, (err) => {
+      if(err) {
+        console.log(err);
+      }
+      console.log("Thumbnail was saved!");
+    });
+
     function decodeBase64Image(dataString) {
       const matches = dataString.match(/^data:([A-Za-z-+\/]+);base64,(.+)$/);
       const response = {};
@@ -43,31 +70,12 @@ module.exports = {
         return new Error('Invalid input string');
       }
       response.type = matches[1];
-      console.log('***********');
       const imageExtension = response.type.split('/')[1];
       image.name = [image.name, imageExtension].join('.');
-      console.log(image.name);
-      console.log('***********');
-
       response.data = new Buffer(matches[2], 'base64');
       return response;
     }
-    const imageBuffer = decodeBase64Image(image.data);
-    fs.writeFile(`../app/assets/images/${image.name}`, imageBuffer.data, (err) => {
-      if(err) {
-        console.log(err);
-      }
-      console.log("The file was saved!");
-    });
 
-    const currentDate = new Date();
-    const imageModel = {
-      src: image.name,
-      description: image.description,
-      dateAdded: [currentDate.getMonth() + 1, currentDate.getDate(), currentDate.getFullYear()].join('/')
-    };
-    const imageDB = new Image(imageModel);
-    const result = yield imageDB.save();
     return result;
 
     // let filename;
