@@ -13,7 +13,7 @@ Object.keys(routes).forEach((item) => {
   router[method](path, co.wrap(function*(req, res, next) {
     const [controller, action] = routes[item].split('.');
     try {
-      const result = yield co(controllers[controller][action](req))
+      const result = yield co(controllers[controller][action](req, res, next))
       res.json(result)
     } catch (err) {
       return next(err);

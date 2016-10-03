@@ -27,7 +27,7 @@ module.exports = {
   },
   * list(req) {
     let images;
-    if (!req.params.skip) {
+    if (!req.params.limit) {
       images = yield Image.find();
     } else {
       images = yield Image.find().sort({ _id: 1 }).skip(parseInt(req.params.skip)).limit(parseInt(req.params.limit));
@@ -46,22 +46,16 @@ module.exports = {
     const fileDir = `${imageID.slice(0,8)}/${imageID.slice(8,16)}`;
     mkdirp.sync(`${originDir}/${fileDir}`);
     mkdirp.sync(`${thumbnailsDir}/${fileDir}`);
+    try {
+      const imageBuffer = decodeBase64Image(image.data);
+      fs.writeFileSync(`${originDir}/${fileDir}/${imageID.slice(16, 24)}.jpg`);
 
-    const imageBuffer = decodeBase64Image(image.data);
-    fs.writeFile(`${originDir}/${fileDir}/${imageID.slice(16,24)}.jpg`, imageBuffer.data, (err) => {
-      if(err) {
-        console.log(err);
-      }
-      console.log("Origin image was saved!");
-    });
-
-    const thumbnailBuffer = decodeBase64Image(image.thumbnailData);
-    fs.writeFile(`${thumbnailsDir}/${fileDir}/${imageID.slice(16,24)}.jpg`, thumbnailBuffer.data, (err) => {
-      if(err) {
-        console.log(err);
-      }
-      console.log("Thumbnail was saved!");
-    });
+      const thumbnailBuffer = decodeBase64Image(image.thumbnailData);
+      fs.writeFileSync(`${thumbnailsDir}/${fileDir}/${imageID.slice(16, 24)}.jpg`, thumbnailBuffer.data);
+    } catch (err) {
+      const deleteResult = yield Image.remove({ _id: imageID });
+      throw err;
+    }
 
     function decodeBase64Image(dataString) {
       const matches = dataString.match(/^data:([A-Za-z-+\/]+);base64,(.+)$/);
@@ -75,46 +69,7 @@ module.exports = {
       response.data = new Buffer(matches[2], 'base64');
       return response;
     }
-
     return result;
-
-    // let filename;
-    // //write file by link
-    // console.log(req.body);
-    // if (req.body.src) {
-    //   const stream = request(req.body.src);
-    //   filename = req.body.src.split('/').slice(-1)[0];
-    //   const writeStream = fs.createWriteStream(`../app/assets/images/${filename}`);
-    //   stream.on('data', (data) => {
-    //     writeStream.write(data)
-    //   });
-    //   stream.on('end', () => {
-    //     writeStream.end();
-    //   });
-    //   stream.on('error', (err) => {
-    //     console.log('something is wrong :( ');
-    //     writeStream.close();
-    //   });
-    // }
-    // // write file from dropzone
-    // if (req.files) {
-    //   console.log(req.files);
-    //
-    //   filename = req.files.file.name;
-    //   const writeStream = fs.createWriteStream(`../app/assets/images/${filename}`);
-    //   writeStream.write(req.files.file.data)
-    //   writeStream.end();
-    // }
-    // // write data to DB
-    // const currentDate = new Date();
-    // const image = {
-    //   src: filename,
-    //   description: req.body.description || '',
-    //   dateAdded: [currentDate.getMonth() + 1, currentDate.getDate(), currentDate.getFullYear()].join('/')
-    // };
-    // const imageDB = new Image(image);
-    // const result = yield imageDB.save();
-    // return result;
   },
   * update(req) {
     const image = req;
