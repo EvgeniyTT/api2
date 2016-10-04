@@ -1,12 +1,26 @@
 const newError = require('../lib/errorFactory');
 const db = require('../lib/mongo.js');
 const fs = require('fs');
+const fsp = require('fs-promise');
 const mkdirp = require('mkdirp');
 
 const Image = db.model('Image');
 
 const originDir = process.env.ORIGIN_DIR;
 const thumbnailsDir = process.env.THUMBNAILS_DIR;
+
+function decodeBase64Image(imageName, dataString) {
+  const matches = dataString.match(/^data:([A-Za-z-+\/]+);base64,(.+)$/);
+  const response = {};
+  if (matches.length !== 3) {
+    return new Error('Invalid input string');
+  }
+  response.type = matches[1];
+  const imageExtension = response.type.split('/')[1];
+  imageName = [imageName, imageExtension].join('.');
+  response.data = new Buffer(matches[2], 'base64');
+  return response;
+}
 
 module.exports = {
   * getOne(req) {
@@ -41,33 +55,18 @@ module.exports = {
     const image = req.body;
     const imageDB = new Image(image);
     const result = yield imageDB.save();
-
     const imageID = result._id.toString();
     const fileDir = `${imageID.slice(0,8)}/${imageID.slice(8,16)}`;
     mkdirp.sync(`${originDir}/${fileDir}`);
     mkdirp.sync(`${thumbnailsDir}/${fileDir}`);
     try {
-      const imageBuffer = decodeBase64Image(image.data);
-      fs.writeFileSync(`${originDir}/${fileDir}/${imageID.slice(16, 24)}.jpg`);
-
-      const thumbnailBuffer = decodeBase64Image(image.thumbnailData);
-      fs.writeFileSync(`${thumbnailsDir}/${fileDir}/${imageID.slice(16, 24)}.jpg`, thumbnailBuffer.data);
+      const imageBuffer = decodeBase64Image(image.name, image.data);
+      yield fsp.writeFile(`${originDir}/${fileDir}/${imageID.slice(16, 24)}.jpg`, imageBuffer.data);
+      const thumbnailBuffer = decodeBase64Image(image.name, image.thumbnailData);
+      yield fsp.writeFile(`${thumbnailsDir}/${fileDir}/${imageID.slice(16, 24)}.jpg`, thumbnailBuffer.data);
     } catch (err) {
-      const deleteResult = yield Image.remove({ _id: imageID });
+      Image.remove({ _id: imageID });
       throw err;
-    }
-
-    function decodeBase64Image(dataString) {
-      const matches = dataString.match(/^data:([A-Za-z-+\/]+);base64,(.+)$/);
-      const response = {};
-      if (matches.length !== 3) {
-        return new Error('Invalid input string');
-      }
-      response.type = matches[1];
-      const imageExtension = response.type.split('/')[1];
-      image.name = [image.name, imageExtension].join('.');
-      response.data = new Buffer(matches[2], 'base64');
-      return response;
     }
     return result;
   },
