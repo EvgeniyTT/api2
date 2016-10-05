@@ -1,8 +1,7 @@
 const newError = require('../lib/errorFactory');
 const db = require('../lib/mongo.js');
-const fs = require('fs');
 const fsp = require('fs-promise');
-const mkdirp = require('mkdirp');
+const mkdirpPromise = require('mkdirp-promise');
 
 const Image = db.model('Image');
 
@@ -40,12 +39,9 @@ module.exports = {
     return result;
   },
   * list(req) {
-    let images;
-    if (!req.params.limit) {
-      images = yield Image.find();
-    } else {
-      images = yield Image.find().sort({ _id: 1 }).skip(parseInt(req.params.skip)).limit(parseInt(req.params.limit));
-    }
+    const skip = req.params.skip ? parseInt(req.params.skip, 10) : 0;
+    const limit = req.params.limit ? parseInt(req.params.limit, 10) : 100;
+    const images = yield Image.find().sort({ _id: 1 }).skip(skip).limit(limit);
     if (images.length === 0) {
       throw newError(404, 'No images were found');
     }
@@ -53,25 +49,24 @@ module.exports = {
   },
   * create(req) {
     const image = req.body;
-    const imageDB = new Image(image);
-    const result = yield imageDB.save();
-    const imageID = result._id.toString();
+    const imageDocument = new Image(image);
+    const imageID = imageDocument._id.toString();
     const fileDir = `${imageID.slice(0,8)}/${imageID.slice(8,16)}`;
-    mkdirp.sync(`${originDir}/${fileDir}`);
-    mkdirp.sync(`${thumbnailsDir}/${fileDir}`);
+    yield mkdirpPromise(`${originDir}/${fileDir}`);
+    yield mkdirpPromise(`${thumbnailsDir}/${fileDir}`);
     try {
       const imageBuffer = decodeBase64Image(image.name, image.data);
       yield fsp.writeFile(`${originDir}/${fileDir}/${imageID.slice(16, 24)}.jpg`, imageBuffer.data);
       const thumbnailBuffer = decodeBase64Image(image.name, image.thumbnailData);
       yield fsp.writeFile(`${thumbnailsDir}/${fileDir}/${imageID.slice(16, 24)}.jpg`, thumbnailBuffer.data);
     } catch (err) {
-      Image.remove({ _id: imageID });
       throw err;
     }
-    return result;
+    yield imageDocument.save();
+    return imageDocument;
   },
   * update(req) {
-    const image = req;
+    const image = req.body;
     const result = yield Image.findOneAndUpdate({ _id: req.params.imageId }, image);
     return result;
   },
