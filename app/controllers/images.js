@@ -54,14 +54,12 @@ module.exports = {
     const fileDir = `${imageID.slice(0,8)}/${imageID.slice(8,16)}`;
     yield mkdirpPromise(`${originDir}/${fileDir}`);
     yield mkdirpPromise(`${thumbnailsDir}/${fileDir}`);
-    try {
-      const imageBuffer = decodeBase64Image(image.name, image.data);
-      yield fsp.writeFile(`${originDir}/${fileDir}/${imageID.slice(16, 24)}.jpg`, imageBuffer.data);
-      const thumbnailBuffer = decodeBase64Image(image.name, image.thumbnailData);
-      yield fsp.writeFile(`${thumbnailsDir}/${fileDir}/${imageID.slice(16, 24)}.jpg`, thumbnailBuffer.data);
-    } catch (err) {
-      throw err;
-    }
+
+    const imageBuffer = decodeBase64Image(image.name, image.data);
+    yield fsp.writeFile(`${originDir}/${fileDir}/${imageID.slice(16, 24)}.jpg`, imageBuffer.data);
+    const thumbnailBuffer = decodeBase64Image(image.name, image.thumbnailData);
+    yield fsp.writeFile(`${thumbnailsDir}/${fileDir}/${imageID.slice(16, 24)}.jpg`, thumbnailBuffer.data);
+
     yield imageDocument.save();
     return imageDocument;
   },
