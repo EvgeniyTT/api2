@@ -8,8 +8,8 @@ const bodyParser = require('body-parser');
 const busboy = require('connect-busboy');
 const busboyBodyParser = require('busboy-body-parser');
 const cors = require('cors');
-const images = require('./routes/images');
-const git = require('./routes/git');
+// const images = require('./routes/images');
+// const git = require('./routes/git');
 const router = require('./lib/router');
 
 // uncomment after placing your favicon in /public
@@ -21,9 +21,7 @@ app.use(busboyBodyParser());
 app.use(bodyParser.json({ limit: '50mb' }));
 app.use(bodyParser.urlencoded({ extended: false, limit: '50mb' }));
 app.use(cookieParser());
-console.log(__dirname);
-app.use(express.static(path.join(__dirname, 'assets/images')));
-
+app.use(express.static('./assets/images'));
 
 // app.use('/images', images);
 // app.use('/git', git);

@@ -6,6 +6,7 @@ module.exports = {
     const gitRepository = req.params.gitRepository;
     const githubFetch = yield fetch(`https://api.github.com/repos/${gitUserName}/${gitRepository}`);
     const githubFetchInfo = yield githubFetch.json();
-    return githubFetchInfo;
+    const githubFetchInfoFreeze = Object.freeze(githubFetchInfo);
+    return githubFetchInfoFreeze;
   }
 };
