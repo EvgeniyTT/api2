@@ -1,0 +1,3 @@
+--reporter nyan
+--timeout 10s
+--recursive
