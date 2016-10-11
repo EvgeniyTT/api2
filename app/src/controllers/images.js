@@ -41,7 +41,7 @@ module.exports = {
   },
   * list(req) {
     const skip = req.params.skip ? parseInt(req.params.skip, 10) : 0;
-    const limit = req.params.limit ? parseInt(req.params.limit, 10) : 100;
+    const limit = req.params.limit ? parseInt(req.params.limit, 10) : 10;
     const images = yield Image.find().sort({ _id: 1 }).skip(skip).limit(limit);
     if (images.length === 0) {
       throw newError(404, 'No images were found');
@@ -70,7 +70,11 @@ module.exports = {
     return result;
   },
   * delete(req) {
-    const result = yield Image.remove({ _id: req.params.imageId });
+    const imageId = req.params.imageId.toString();
+    const fileDir = `${imageId.slice(0,8)}/${imageId.slice(8,16)}/${imageId.slice(16, 24)}.jpg`;
+    yield fsp.remove(`${originDir}/${fileDir}`);
+    yield fsp.remove(`${thumbnailsDir}/${fileDir}`);
+    const result = yield Image.remove({ _id: imageId });
     return result;
   }
 };
