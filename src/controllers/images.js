@@ -12,8 +12,8 @@ const thumbnailsDir = process.env.THUMBNAILS_DIR;
 function decodeBase64Image(imageName, dataString) {
   const matches = dataString.match(/^data:([A-Za-z-+\/]+);base64,(.+)$/);
   const response = {};
-  if (matches.length !== 3) {
-    return new Error('Invalid input string');
+  if (!matches || matches.length !== 3) {
+    throw newError(404, 'Invalid image data url');
   }
   response.type = matches[1];
   const imageExtension = response.type.split('/')[1];
@@ -31,7 +31,7 @@ module.exports = {
       throw newError(400, e);
     }
     if (!result) {
-      throw newError(404, 'Image was not found');
+      throw newError(400, 'Image was not found');
     }
     const prevImage = yield Image.findOne({ _id: { $lt: req.params.imageId } }).sort({ _id: -1 });
     const nextImage = yield Image.findOne({ _id: { $gt: req.params.imageId } }).sort({ _id: 1 });
@@ -43,8 +43,8 @@ module.exports = {
     const skip = req.params.skip ? parseInt(req.params.skip, 10) : 0;
     const limit = !req.params.limit ? 10 : parseInt(req.params.limit, 10) > 100 ? 100 : parseInt(req.params.limit, 10);
     const images = yield Image.find().sort({ _id: 1 }).skip(skip).limit(limit);
-    if (images.length === 0) {
-      throw newError(404, 'No images were found');
+    if (limit === 0 || images.length === 0) {
+      throw newError(400, 'No images were returned. Please check you do not set limit to 0 anf images are exist');
     }
     return images;
   },
