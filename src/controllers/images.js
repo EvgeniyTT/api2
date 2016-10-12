@@ -44,7 +44,7 @@ module.exports = {
     const limit = !req.params.limit ? 10 : parseInt(req.params.limit, 10) > 100 ? 100 : parseInt(req.params.limit, 10);
     const images = yield Image.find().sort({ _id: 1 }).skip(skip).limit(limit);
     if (limit === 0 || images.length === 0) {
-      throw newError(400, 'No images were returned. Please check you do not set limit to 0 anf images are exist');
+      throw newError(400, 'No images were returned. Please check you do not set limit to 0 and images are exist');
     }
     return images;
   },
