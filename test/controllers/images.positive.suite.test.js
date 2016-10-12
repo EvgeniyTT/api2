@@ -12,6 +12,10 @@ const mkdirpPromise = require('mkdirp-promise');
 const Image = db.model('Image');
 
 const imageModule = require('../../src/controllers/images');
+const originDir = process.env.ORIGIN_DIR;
+const thumbnailsDir = process.env.THUMBNAILS_DIR;
+
+let imageDocument;
 
 function* createImage() {
   const image = {
@@ -25,7 +29,7 @@ function* createImage() {
     thumbnailWidth: 567,
     thumbnailHeight: 334,
   };
-  const imageDocument = new Image(image);
+  imageDocument = new Image(image);
   yield imageDocument.save();
   const imageID = imageDocument._id.toString();
   const fileDir = `${imageID.slice(0,8)}/${imageID.slice(8,16)}`;
@@ -37,7 +41,6 @@ function* createImage() {
   // const thumbnailBuffer = decodeBase64Image(image.name, image.thumbnailData);
   yield fsp.writeFile(`${thumbnailsDir}/${fileDir}/${imageID.slice(16, 24)}.jpg`);
 
-  return imageDocument;
   testImagesIds.push(imageDocument._id);
   // done();
 };
@@ -48,16 +51,16 @@ describe('image controller - positive tests:', function() {
   let image = {};
   let fifthImage = {};
   let req = {};
-  beforeEach( createImage() );
+  beforeEach( createImage );
 
   it('should get image', function(done) {
     request(app)
-      .get(`/images/${image._id}`)
+      .get(`/images/${imageDocument._id}`)
       .expect(200)
       .expect(res => {
-        Object.keys(image).forEach(function(key) {
+        Object.keys(imageDocument).forEach(function(key) {
           if (['data, thumbnailData'].indexOf(key) > 0) {
-            expect(res.body[key]).to.equal(image[key]);
+            expect(res.body[key]).to.equal(imageDocument[key]);
           }
         });
       })
@@ -71,13 +74,13 @@ describe('image controller - positive tests:', function() {
     image.thumbnailWidth = 761;
     image.thumbnailHeight = 137;
     request(app)
-      .put(`/images/${image._id}`)
-      .send(image)
+      .put(`/images/${imageDocument._id}`)
+      .send(imageDocument)
       .expect(200)
       .expect(res => {
-        Object.keys(image).forEach(function(key) {
+        Object.keys(imageDocument).forEach(function(key) {
           if (['data, thumbnailData'].indexOf(key) > 0) {
-            expect(res.body[key]).to.equal(image[key]);
+            expect(res.body[key]).to.equal(imageDocument[key]);
           }
         });
       })
@@ -85,7 +88,7 @@ describe('image controller - positive tests:', function() {
   });
   it('should remove image', function(done) {
     request(app)
-      .delete(`/images/${image._id}`)
+      .delete(`/images/${imageDocument._id}`)
       .expect(200)
       .expect(res => {
         expect(res.body.ok).to.equal(1);
