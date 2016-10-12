@@ -6,7 +6,41 @@ chai.use(require('chai-fs'));
 const expect = chai.expect;
 const assert = chai.assert;
 const app = require('../../src/app');
+const db = require('../../src/lib/mongo.js');
+const fsp = require('fs-promise');
+const mkdirpPromise = require('mkdirp-promise');
+const Image = db.model('Image');
+
 const imageModule = require('../../src/controllers/images');
+
+function* createImage() {
+  const image = {
+    name: 'TESTnameTEST',
+    description: 'TESTdescriptionTEST',
+    data: 'data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAAAQABAAD/2wBDAAUDBAQEAwUEBAQFBQUGBwwIBwcHBw8LCwk',
+    dateAdded: new Date(),
+    thumbnailData: 'data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAAAQABAAD/2wBDAAUDBAQEAwUEBAQFBQUGBwwIBwcHBw8LCwk',
+    thumbnailX: 27,
+    thumbnailY: 44,
+    thumbnailWidth: 567,
+    thumbnailHeight: 334,
+  };
+  const imageDocument = new Image(image);
+  yield imageDocument.save();
+  const imageID = imageDocument._id.toString();
+  const fileDir = `${imageID.slice(0,8)}/${imageID.slice(8,16)}`;
+  yield mkdirpPromise(`${originDir}/${fileDir}`);
+  yield mkdirpPromise(`${thumbnailsDir}/${fileDir}`);
+
+  // const imageBuffer = decodeBase64Image(image.name, image.data);
+  yield fsp.writeFile(`${originDir}/${fileDir}/${imageID.slice(16, 24)}.jpg`);
+  // const thumbnailBuffer = decodeBase64Image(image.name, image.thumbnailData);
+  yield fsp.writeFile(`${thumbnailsDir}/${fileDir}/${imageID.slice(16, 24)}.jpg`);
+
+  return imageDocument;
+  testImagesIds.push(imageDocument._id);
+  // done();
+};
 
 let testImagesIds = [];
 
@@ -14,21 +48,8 @@ describe('image controller - positive tests:', function() {
   let image = {};
   let fifthImage = {};
   let req = {};
-  beforeEach(function*() {
-    req.body = {
-      name: 'TESTnameTEST',
-      description: 'TESTdescriptionTEST',
-      data: 'data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAAAQABAAD/2wBDAAUDBAQEAwUEBAQFBQUGBwwIBwcHBw8LCwk',
-      dateAdded: new Date(),
-      thumbnailData: 'data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAAAQABAAD/2wBDAAUDBAQEAwUEBAQFBQUGBwwIBwcHBw8LCwk',
-      thumbnailX: 27,
-      thumbnailY: 44,
-      thumbnailWidth: 567,
-      thumbnailHeight: 334,
-    };
-    image = yield imageModule.create(req);
-    testImagesIds.push(image._id);
-  });
+  beforeEach( createImage() );
+
   it('should get image', function(done) {
     request(app)
       .get(`/images/${image._id}`)
