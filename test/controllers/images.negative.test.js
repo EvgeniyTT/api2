@@ -6,7 +6,6 @@ chai.use(require('chai-fs'));
 const expect = chai.expect;
 const assert = chai.assert;
 const app = require('../../src/app');
-const imageModule = require('../../src/controllers/images');
 
 let testImagesIds = [];
 

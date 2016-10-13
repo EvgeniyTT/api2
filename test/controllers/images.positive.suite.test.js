@@ -15,8 +15,8 @@ const imageModule = require('../../src/controllers/images');
 const originDir = process.env.ORIGIN_DIR;
 const thumbnailsDir = process.env.THUMBNAILS_DIR;
 
-let imageDocument;
-
+let testImagesIds = [];
+let imageDocument = {};
 function* createImage() {
   const image = {
     name: 'TESTnameTEST',
@@ -35,24 +35,15 @@ function* createImage() {
   const fileDir = `${imageID.slice(0,8)}/${imageID.slice(8,16)}`;
   yield mkdirpPromise(`${originDir}/${fileDir}`);
   yield mkdirpPromise(`${thumbnailsDir}/${fileDir}`);
-
-  // const imageBuffer = decodeBase64Image(image.name, image.data);
-  yield fsp.writeFile(`${originDir}/${fileDir}/${imageID.slice(16, 24)}.jpg`);
-  // const thumbnailBuffer = decodeBase64Image(image.name, image.thumbnailData);
-  yield fsp.writeFile(`${thumbnailsDir}/${fileDir}/${imageID.slice(16, 24)}.jpg`);
-
+  yield fsp.writeFile(`${originDir}/${fileDir}/${imageID.slice(16, 24)}.jpg`,{});
+  yield fsp.writeFile(`${thumbnailsDir}/${fileDir}/${imageID.slice(16, 24)}.jpg`,{});
   testImagesIds.push(imageDocument._id);
-  // done();
-};
-
-let testImagesIds = [];
+}
 
 describe('image controller - positive tests:', function() {
-  let image = {};
   let fifthImage = {};
   let req = {};
   beforeEach( createImage );
-
   it('should get image', function(done) {
     request(app)
       .get(`/images/${imageDocument._id}`)
@@ -67,20 +58,23 @@ describe('image controller - positive tests:', function() {
       .end(done);
   });
   it('should update image', function(done) {
-    image.name = 'TESTnameUpdatedTEST';
-    image.description = 'TESTdescriptionUpdatedTEST';
-    image.thumbnailX = 44;
-    image.thumbnailY = 22;
-    image.thumbnailWidth = 761;
-    image.thumbnailHeight = 137;
+    let image = {
+      _id : testImagesIds[0],
+      name : 'TESTnameUpdatedTEST',
+      description : 'TESTdescriptionUpdatedTEST',
+      thumbnailX : 44,
+      thumbnailY : 22,
+      thumbnailWidth : 761,
+      thumbnailHeight : 137
+    }
     request(app)
-      .put(`/images/${imageDocument._id}`)
-      .send(imageDocument)
+      .put(`/images/${image._id}`)
+      .send(image)
       .expect(200)
       .expect(res => {
-        Object.keys(imageDocument).forEach(function(key) {
+        Object.keys(image).forEach(function(key) {
           if (['data, thumbnailData'].indexOf(key) > 0) {
-            expect(res.body[key]).to.equal(imageDocument[key]);
+            expect(res.body[key]).to.equal(image[key]);
           }
         });
       })
@@ -93,8 +87,10 @@ describe('image controller - positive tests:', function() {
       .expect(res => {
         expect(res.body.ok).to.equal(1);
         expect(res.body.n).to.equal(1);
-        expect(`${process.env.ORIGIN_DIR}/${image.imagePath}`).to.not.be.a.path();
-        expect(`${process.env.THUMBNAILS_DIR}/${image.imagePath}`).to.not.be.a.path();
+        const imageID = imageDocument._id.toString();
+        const imagePath = `${imageID.slice(0,8)}/${imageID.slice(8,16)}/${imageID.slice(16, 24)}.jpg`;
+        expect(`${process.env.ORIGIN_DIR}/${imagePath}`).to.not.be.a.path();
+        expect(`${process.env.THUMBNAILS_DIR}/${imagePath}`).to.not.be.a.path();
       })
       .end(done);
   });
@@ -124,23 +120,8 @@ describe('image controller - positive flow: ', function() {
   this.timeout(5000);
   let image = {};
   before(function* add120Images() {
-    image = {
-      name: 'TESTnameTEST',
-      description: 'TESTdescriptionTEST',
-      data: 'data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAAAQABAAD/2wBDAAUDBAQEAwUEBAQFBQUGBwwIBwcHBw8LCwk',
-      dateAdded: new Date(),
-      thumbnailData: 'data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAAAQABAAD/2wBDAAUDBAQEAwUEBAQFBQUGBwwIBwcHBw8LCwk',
-      thumbnailX: 27,
-      thumbnailY: 44,
-      thumbnailWidth: 567,
-      thumbnailHeight: 334,
-    };
-    const request = {};
     for (let i = 0; i < 120; i++) {
-      request.body = image;
-      request.body.name += i;
-      let result = yield imageModule.create(request);
-      testImagesIds.push(result._id)
+      createImage();
     }
   });
   it('should return 100 images if user tries to get more than 100 in a one request', function(done) {
