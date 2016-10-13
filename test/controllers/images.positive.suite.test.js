@@ -1,5 +1,3 @@
-require('dotenv').config({path: '.env'});
-require('co-mocha');
 const request = require('supertest');
 const chai = require('chai');
 chai.use(require('chai-fs'));
@@ -10,37 +8,20 @@ const db = require('../../src/lib/mongo.js');
 const fsp = require('fs-promise');
 const mkdirpPromise = require('mkdirp-promise');
 const Image = db.model('Image');
-
 const imageModule = require('../../src/controllers/images');
 const originDir = process.env.ORIGIN_DIR;
 const thumbnailsDir = process.env.THUMBNAILS_DIR;
 
 let testImagesIds = [];
 let imageDocument = {};
-function* createImage() {
-  const image = {
-    name: 'TESTnameTEST',
-    description: 'TESTdescriptionTEST',
-    data: 'data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAAAQABAAD/2wBDAAUDBAQEAwUEBAQFBQUGBwwIBwcHBw8LCwk',
-    dateAdded: new Date(),
-    thumbnailData: 'data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAAAQABAAD/2wBDAAUDBAQEAwUEBAQFBQUGBwwIBwcHBw8LCwk',
-    thumbnailX: 27,
-    thumbnailY: 44,
-    thumbnailWidth: 567,
-    thumbnailHeight: 334,
-  };
-  imageDocument = new Image(image);
-  yield imageDocument.save();
-  const imageID = imageDocument._id.toString();
-  const fileDir = `${imageID.slice(0,8)}/${imageID.slice(8,16)}`;
-  yield mkdirpPromise(`${originDir}/${fileDir}`);
-  yield mkdirpPromise(`${thumbnailsDir}/${fileDir}`);
-  yield fsp.writeFile(`${originDir}/${fileDir}/${imageID.slice(16, 24)}.jpg`,{});
-  yield fsp.writeFile(`${thumbnailsDir}/${fileDir}/${imageID.slice(16, 24)}.jpg`,{});
-  testImagesIds.push(imageDocument._id);
-}
 
-describe('image controller - positive tests:', function() {
+before(function* add120Images() {
+  for (let i = 0; i < 120; i++) {
+    yield createImage();
+  }
+});
+
+describe('image controller - positive suite:', function() {
   let fifthImage = {};
   let req = {};
   beforeEach( createImage );
@@ -114,16 +95,6 @@ describe('image controller - positive tests:', function() {
       })
       .end(done);
   });
-});
-
-describe('image controller - positive flow: ', function() {
-  this.timeout(5000);
-  let image = {};
-  before(function* add120Images() {
-    for (let i = 0; i < 120; i++) {
-      createImage();
-    }
-  });
   it('should return 100 images if user tries to get more than 100 in a one request', function(done) {
     request(app)
       .get('/images/0/101')
@@ -143,3 +114,26 @@ after(function* deleteImages() {
     yield imageModule.delete(request);
   }
 });
+
+function* createImage() {
+  const image = {
+    name: 'TESTnameTEST',
+    description: 'TESTdescriptionTEST',
+    data: 'data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAAAQABAAD/2wBDAAUDBAQEAwUEBAQFBQUGBwwIBwcHBw8LCwk',
+    dateAdded: new Date(),
+    thumbnailData: 'data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAAAQABAAD/2wBDAAUDBAQEAwUEBAQFBQUGBwwIBwcHBw8LCwk',
+    thumbnailX: 27,
+    thumbnailY: 44,
+    thumbnailWidth: 567,
+    thumbnailHeight: 334,
+  };
+  imageDocument = new Image(image);
+  yield imageDocument.save();
+  const imageID = imageDocument._id.toString();
+  const fileDir = `${imageID.slice(0,8)}/${imageID.slice(8,16)}`;
+  yield mkdirpPromise(`${originDir}/${fileDir}`);
+  yield mkdirpPromise(`${thumbnailsDir}/${fileDir}`);
+  yield fsp.writeFile(`${originDir}/${fileDir}/${imageID.slice(16, 24)}.jpg`,{});
+  yield fsp.writeFile(`${thumbnailsDir}/${fileDir}/${imageID.slice(16, 24)}.jpg`,{});
+  testImagesIds.push(imageDocument._id);
+}

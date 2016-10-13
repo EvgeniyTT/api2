@@ -1,5 +1,3 @@
-require('dotenv').config({path: '.env'});
-require('co-mocha');
 const request = require('supertest');
 const chai = require('chai');
 chai.use(require('chai-fs'));

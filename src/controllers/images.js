@@ -61,7 +61,7 @@ module.exports = {
     const thumbnailBuffer = decodeBase64Image(image.name, image.thumbnailData);
     yield fsp.writeFile(`${thumbnailsDir}/${fileDir}/${imageID.slice(16, 24)}.jpg`, thumbnailBuffer.data);
 
-    yield imageDocument.save();
+    const result = yield imageDocument.save();
     return imageDocument;
   },
   * update(req) {
